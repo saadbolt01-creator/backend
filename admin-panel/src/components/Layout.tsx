@@ -7,7 +7,8 @@ import {
   Building2, 
   LogOut, 
   Menu,
-  X
+  X,
+  Shield
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -38,40 +39,45 @@ export default function Layout({ children }: LayoutProps) {
       )}
 
       {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+      <div className={`fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}>
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200">
+        {/* Logo and Brand */}
+        <div className="flex items-center justify-between h-20 px-6 border-b border-gray-200 bg-gradient-to-r from-primary-600 to-primary-700">
           <div className="flex items-center">
-            <div className="w-8 h-8 bg-gradient-to-br from-primary-600 to-primary-700 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">SF</span>
+            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-lg">
+              <Shield className="w-6 h-6 text-primary-600" />
             </div>
-            <span className="ml-3 text-lg font-semibold text-gray-900">Admin Panel</span>
+            <div className="ml-3">
+              <span className="text-white font-bold text-lg">Admin Panel</span>
+              <p className="text-primary-100 text-xs">Saher Flow Solutions</p>
+            </div>
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-1 rounded-md text-gray-400 hover:text-gray-500"
+            className="lg:hidden p-2 rounded-lg text-white hover:bg-white hover:bg-opacity-20 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        <nav className="mt-6 px-3">
-          <div className="space-y-1">
+        {/* Navigation */}
+        <nav className="mt-8 px-4">
+          <div className="space-y-2">
             {navigation.map((item) => {
               const Icon = item.icon
               return (
                 <Link
                   key={item.name}
                   to={item.href}
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors duration-200 ${
+                  className={`group flex items-center px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 ${
                     isActive(item.href)
-                      ? 'bg-primary-50 text-primary-700 border-r-2 border-primary-600'
+                      ? 'bg-primary-50 text-primary-700 shadow-sm border-l-4 border-primary-600'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <Icon className={`mr-3 h-5 w-5 ${
+                  <Icon className={`mr-4 h-5 w-5 ${
                     isActive(item.href) ? 'text-primary-600' : 'text-gray-400 group-hover:text-gray-500'
                   }`} />
                   {item.name}
@@ -81,21 +87,25 @@ export default function Layout({ children }: LayoutProps) {
           </div>
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-          <div className="flex items-center mb-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-accent-400 to-accent-500 rounded-full flex items-center justify-center">
-              <span className="text-white font-medium text-sm">
+        {/* User Profile Section */}
+        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-gray-200 bg-gray-50">
+          <div className="flex items-center mb-4">
+            <div className="w-12 h-12 bg-gradient-to-br from-accent-400 to-accent-500 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white font-bold text-lg">
                 {user?.firstName?.[0]}{user?.lastName?.[0]}
               </span>
             </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-900">{user?.firstName} {user?.lastName}</p>
-              <p className="text-xs text-gray-500">{user?.email}</p>
+            <div className="ml-4 flex-1">
+              <p className="text-sm font-semibold text-gray-900">{user?.firstName} {user?.lastName}</p>
+              <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800 mt-1">
+                Administrator
+              </span>
             </div>
           </div>
           <button
             onClick={logout}
-            className="w-full flex items-center px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 rounded-lg transition-colors duration-200"
+            className="w-full flex items-center justify-center px-4 py-3 text-sm font-medium text-gray-600 hover:bg-white hover:text-gray-900 rounded-xl transition-all duration-200 border border-gray-200 hover:border-gray-300 hover:shadow-sm"
           >
             <LogOut className="mr-3 h-4 w-4" />
             Sign out
@@ -104,21 +114,22 @@ export default function Layout({ children }: LayoutProps) {
       </div>
 
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div className="lg:pl-72">
         {/* Top bar */}
         <div className="sticky top-0 z-10 bg-white shadow-sm border-b border-gray-200">
           <div className="flex items-center justify-between h-16 px-6">
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+              className="lg:hidden p-2 rounded-lg text-gray-400 hover:text-gray-500 hover:bg-gray-100 transition-colors"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-6 h-6" />
             </button>
             
             <div className="flex items-center space-x-4">
-              <span className="text-sm text-gray-500">
-                Saher Flow Solutions Admin
-              </span>
+              <div className="text-right">
+                <p className="text-sm font-medium text-gray-900">Welcome back, {user?.firstName}</p>
+                <p className="text-xs text-gray-500">Manage your platform efficiently</p>
+              </div>
             </div>
           </div>
         </div>

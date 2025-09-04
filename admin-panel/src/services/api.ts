@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const API_BASE_URL = 'http://localhost:5000/api'
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
@@ -34,8 +34,11 @@ export const usersAPI = {
   getAllUsers: (page = 1, limit = 10) =>
     api.get(`/user/all?page=${page}&limit=${limit}`),
   
-  getUserStats: () =>
-    api.get('/user/stats'),
+  updateUser: (id: string, data: any) =>
+    api.put(`/user/${id}`, data),
+  
+  deleteUser: (id: string) =>
+    api.delete(`/user/${id}`),
 }
 
 // Companies API
@@ -57,9 +60,6 @@ export const companiesAPI = {
   
   checkDomain: (domain: string) =>
     api.get(`/company/check-domain/${domain}`),
-  
-  getCompanyStats: () =>
-    api.get('/company/stats'),
 }
 
 export default api

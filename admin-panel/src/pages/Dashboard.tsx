@@ -43,8 +43,8 @@ export default function Dashboard() {
           verifiedUsers: users.filter((u: any) => u.isEmailVerified).length,
           totalCompanies: companies.length,
           activeCompanies: companies.filter((c: any) => c.isActive).length,
-          recentUsers: users.slice(0, 5),
-          recentCompanies: companies.slice(0, 5)
+          recentUsers: users.slice(0, 6),
+          recentCompanies: companies.slice(0, 6)
         })
       }
     } catch (error: any) {
@@ -60,28 +60,28 @@ export default function Dashboard() {
       value: stats.totalUsers,
       icon: Users,
       color: 'bg-blue-500',
-      change: '+12%'
+      change: `${stats.totalUsers} registered`
     },
     {
       title: 'Verified Users',
       value: stats.verifiedUsers,
       icon: UserCheck,
       color: 'bg-green-500',
-      change: '+8%'
+      change: `${Math.round((stats.verifiedUsers / stats.totalUsers) * 100) || 0}% verified`
     },
     {
       title: 'Total Companies',
       value: stats.totalCompanies,
       icon: Building2,
       color: 'bg-purple-500',
-      change: '+3%'
+      change: `${stats.totalCompanies} approved`
     },
     {
       title: 'Active Companies',
       value: stats.activeCompanies,
       icon: AlertTriangle,
       color: 'bg-orange-500',
-      change: '0%'
+      change: `${Math.round((stats.activeCompanies / stats.totalCompanies) * 100) || 0}% active`
     }
   ]
 
@@ -96,11 +96,15 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Overview of your platform statistics and recent activity</p>
+        </div>
         <button
           onClick={loadDashboardData}
-          className="btn-secondary"
+          className="btn-secondary flex items-center"
         >
+          <Filter className="w-4 h-4 mr-2" />
           Refresh Data
         </button>
       </div>
@@ -110,17 +114,15 @@ export default function Dashboard() {
         {statCards.map((stat) => {
           const Icon = stat.icon
           return (
-            <div key={stat.title} className="card">
+            <div key={stat.title} className="card hover:shadow-lg transition-all duration-200">
               <div className="flex items-center">
-                <div className={`p-3 rounded-lg ${stat.color}`}>
-                  <Icon className="w-6 h-6 text-white" />
+                <div className={`p-4 rounded-xl ${stat.color} shadow-lg`}>
+                  <Icon className="w-7 h-7 text-white" />
                 </div>
-                <div className="ml-4">
+                <div className="ml-5 flex-1">
                   <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                  <div className="flex items-center">
-                    <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                    <span className="ml-2 text-sm text-green-600">{stat.change}</span>
-                  </div>
+                  <p className="text-3xl font-bold text-gray-900 mb-1">{stat.value}</p>
+                  <span className="text-xs text-gray-500">{stat.change}</span>
                 </div>
               </div>
             </div>
