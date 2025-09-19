@@ -126,7 +126,7 @@ router.get('/hierarchy/:hierarchyId', protect, async (req, res) => {
       data: {
         hierarchy: hierarchy.toJSON(),
         chartData: chartData.map(row => ({
-          timestamp: row.minute,
+          timestamp: row.minute || row.time_period,
           totalGfr: parseFloat(row.total_gfr) || 0,
           totalGor: parseFloat(row.total_gor) || 0,
           totalOfr: parseFloat(row.total_ofr) || 0,
@@ -348,6 +348,55 @@ router.get('/dashboard', protect, async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error getting dashboard data'
+    });
+  }
+});
+
+// @desc    Debug endpoint to check devices for hierarchy
+// @route   GET /api/charts/debug/hierarchy/:hierarchyId
+// @access  Private
+router.get('/debug/hierarchy/:hierarchyId', protect, async (req, res) => {
+  try {
+    const hierarchyId = parseInt(req.params.hierarchyId);
+
+    // Check if hierarchy exists and user has access
+    const hierarchy = await Hierarchy.findById(hierarchyId);
+    if (!hierarchy) {
+      return res.status(404).json({
+        success: false,
+        message: 'Hierarchy not found'
+      });
+    }
+
+    // Check if user has access to this hierarchy
+    if (req.user.role !== 'admin' && hierarchy.company_id !== req.user.company_id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied to this hierarchy'
+      });
+    }
+
+    // Get debug information
+    const devices = await Device.getDevicesForHierarchy(hierarchyId);
+    
+    // Get sample chart data
+    const chartData = await Device.getHierarchyChartData(hierarchyId, 'day');
+
+    res.json({
+      success: true,
+      message: 'Debug information retrieved successfully',
+      data: {
+        hierarchy: hierarchy.toJSON(),
+        devices: devices,
+        chartDataPoints: chartData.length,
+        sampleChartData: chartData.slice(0, 5) // First 5 data points
+      }
+    });
+  } catch (error) {
+    console.error('Debug hierarchy error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error getting debug information'
     });
   }
 });
