@@ -126,7 +126,7 @@ router.get('/hierarchy/:hierarchyId', protect, async (req, res) => {
       data: {
         hierarchy: hierarchy.toJSON(),
         chartData: chartData.map(row => ({
-          timestamp: row.minute || row.time_period,
+          timestamp: row.minute,
           totalGfr: parseFloat(row.total_gfr) || 0,
           totalGor: parseFloat(row.total_gor) || 0,
           totalOfr: parseFloat(row.total_ofr) || 0,
@@ -352,12 +352,13 @@ router.get('/dashboard', protect, async (req, res) => {
   }
 });
 
-// @desc    Debug endpoint to check devices for hierarchy
-// @route   GET /api/charts/debug/hierarchy/:hierarchyId
+// @desc    Get raw hierarchy data for testing
+// @route   GET /api/charts/test/hierarchy/:hierarchyId
 // @access  Private
-router.get('/debug/hierarchy/:hierarchyId', protect, async (req, res) => {
+router.get('/test/hierarchy/:hierarchyId', protect, async (req, res) => {
   try {
     const hierarchyId = parseInt(req.params.hierarchyId);
+    const timeRange = req.query.timeRange || 'day';
 
     // Check if hierarchy exists and user has access
     const hierarchy = await Hierarchy.findById(hierarchyId);
@@ -376,27 +377,78 @@ router.get('/debug/hierarchy/:hierarchyId', protect, async (req, res) => {
       });
     }
 
-    // Get debug information
-    const devices = await Device.getDevicesForHierarchy(hierarchyId);
-    
-    // Get sample chart data
-    const chartData = await Device.getHierarchyChartData(hierarchyId, 'day');
+    let timeFilter = '';
+    switch (timeRange) {
+      case 'hour':
+        timeFilter = "dd.created_at >= now() - interval '1 hour'";
+        break;
+      case 'day':
+        timeFilter = "dd.created_at >= date_trunc('day', now())";
+        break;
+      case 'week':
+        timeFilter = "dd.created_at >= now() - interval '7 days'";
+        break;
+      case 'month':
+        timeFilter = "dd.created_at >= now() - interval '30 days'";
+        break;
+      default:
+        timeFilter = "dd.created_at >= date_trunc('day', now())";
+    }
+
+    // Simple query to get raw data
+    const rawQuery = `
+      WITH RECURSIVE hierarchy_cte AS (
+        SELECT id, name
+        FROM hierarchy
+        WHERE id = $1
+        UNION ALL
+        SELECT h.id, h.name
+        FROM hierarchy h
+        JOIN hierarchy_cte c ON h.parent_id = c.id
+      )
+      SELECT 
+        hc.id as hierarchy_id,
+        hc.name as hierarchy_name,
+        d.id as device_id,
+        d.serial_number,
+        dd.created_at,
+        dd.data,
+        (dd.data->>'GFR')::numeric as gfr,
+        (dd.data->>'OFR')::numeric as ofr,
+        (dd.data->>'WFR')::numeric as wfr
+      FROM hierarchy_cte hc
+      JOIN hierarchy_device hd ON hc.id = hd.hierarchy_id
+      JOIN device d ON hd.device_id = d.id
+      JOIN device_data dd ON d.id = dd.device_id
+      WHERE ${timeFilter}
+      ORDER BY dd.created_at DESC
+      LIMIT 100
+    `;
+
+    const rawResult = await database.query(rawQuery, [hierarchyId]);
+
+    // Get aggregated data using the fixed query
+    const chartData = await Device.getHierarchyChartData(hierarchyId, timeRange);
 
     res.json({
       success: true,
-      message: 'Debug information retrieved successfully',
+      message: 'Test data retrieved successfully',
       data: {
         hierarchy: hierarchy.toJSON(),
-        devices: devices,
+        rawDataSample: rawResult.rows.slice(0, 10), // First 10 raw records
+        totalRawRecords: rawResult.rows.length,
         chartDataPoints: chartData.length,
-        sampleChartData: chartData.slice(0, 5) // First 5 data points
+        chartDataSample: chartData.slice(0, 5), // First 5 aggregated points
+        timeRange,
+        timeFilter
       }
     });
   } catch (error) {
-    console.error('Debug hierarchy error:', error);
+    console.error('Test hierarchy data error:', error);
     res.status(500).json({
       success: false,
-      message: 'Server error getting debug information'
+      message: 'Server error getting test data',
+      error: error.message
     });
   }
 });
